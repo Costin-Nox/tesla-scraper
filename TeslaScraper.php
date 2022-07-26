@@ -1,9 +1,10 @@
 <?php
 /**
- * Amazon order history parser.
+ * tesla scraper
  * 
- * @author  Costin Ghiocel <me@costingcl.ca>
+ * @author Costin Ghiocel <costinghiocel@gmail.com>
  */
+require 'Car.php';
 
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
@@ -12,6 +13,9 @@ use Tightenco\Collect\Support\Collection;
 
 Class TeslaScraper
 {
+	protected $client;
+	protected $db;
+
 	public function __construct() {
 		$this->client  = new Client([
             // Base URI is used with relative requests
@@ -45,12 +49,11 @@ Class TeslaScraper
 		];
 
 
-	public function scrape() {
+	public function scrape() : array
+	{
 		$result = [];
 		foreach ($this->searches as $name => $search) 
 		{
-			$result[$name] = [];
-
 			_log('Fetching results for ' . $name);
 			$response = $this->client->request('GET', $search);
 			$details  = json_decode($response->getBody());
@@ -60,17 +63,63 @@ Class TeslaScraper
 
 			if ($matches == 0) { continue; }
 
-			foreach ($details->results as $car => $description) {
-				$result[$name][] = [
-					'price' => $description->InventoryPrice,
-					'odometer' => $description->Odometer,
-					'trim' => $description->TrimName,
-					'year' => $description->Year,
-				];
+			foreach ($details->results as $car => $description) 
+			{
+				$result[] = new Car($description);
+			}
+
+		}
+
+		return $result;
+	}
+
+	public function proccessData(array $data) : array
+	{
+		$result = ['new' => [], 'price_change' => [], 'sold' => []];
+
+		foreach($data as $type => $car) 
+		{
+			if(!$car->isInDb()) {
+				$car->save();
+				$result['new'][] = $car->toArray();
+			} else {
+				if($car->priceChanged) {
+					$result['price_change'][]  = $car->toArray();
+				}
 			}
 		}
 
-		dd($result);
+
+		return $result;
+	}
+
+	public function getSold(array $data) : array
+	{
+		$fromDb   = Car::all();
+		$soldList = [];
+		$vins     = [];
+
+		foreach($data as $type => $car) {
+
+			$vins[] = $car->vin;
+
+		}
+
+		$sold = $fromDb->whereNotIn('vin', $vins);
+
+		foreach($sold as $car) {
+			if ($car->status != 'sold') 
+			{
+				$car->sold_on    = \Carbon\Carbon::now();
+				$car->status     = 'sold';
+				$car->save();
+
+				$soldList[] = $car->toArray();
+			}
+			
+		}
+
+		return $soldList;		
 	}
 
 }

@@ -2,8 +2,10 @@
 /**
  * Bootstrap and run.
  * 
- * @author  Costin Ghiocel <me@costingcl.ca>
+ * @author Costin Ghiocel <costinghiocel@gmail.com>
  */
+
+
 
 require 'vendor/autoload.php';
 require 'Colors.php';
@@ -36,8 +38,23 @@ function dd($data) {
 /**
  * Run
  */
-$tesla = new TeslaScraper();
-$tesla->scrape();
+$tesla         = new TeslaScraper();
+$carsAvailable = $tesla->scrape();
+$changes       = $tesla->proccessData($carsAvailable);
+$sold          = $tesla->getSold($carsAvailable);
+
+/*
+$html = "<br><br><h2>Cars Available</h2><br><br>";
+foreach($carsAvailable as $c) {
+	$html .= "<pre>" . $c->
+}*/
+foreach ($carsAvailable as $c) {
+	echo $c;
+}
+_log('Changes:');
+dump($changes);
+_log('Cars Sold:');
+dump($sold);
 
 
 

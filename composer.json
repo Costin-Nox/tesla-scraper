@@ -2,7 +2,11 @@
    "require": {
       "guzzlehttp/guzzle": "~6.0",
       "league/csv": "^8.0",
-      "nesbot/carbon": "^2.16",
-      "tightenco/collect": "^6.13"
+      "nesbot/carbon": "^2.59",
+      "tightenco/collect": "^6.13",
+      "rakibtg/sleekdb": "^2.13",
+      "illuminate/support": "^7.30",
+      "sendgrid/sendgrid": "^7.11",
+      "akaunting/laravel-money": "^1.2"
    }
 }
