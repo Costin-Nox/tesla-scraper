@@ -47,10 +47,8 @@ class Car implements \JsonSerializable
             $this->fill($data);
         }
 
-        if ($this->vin && strlen($this->vin) < 22) {
-        	$this->url = "https://www.tesla.com/en_CA/mx/order/{$this->vin}";
-        } else {
-        	$this->url = 'https://tesla.com';
+        if ($this->vin) {
+        	$this->url = "https://www.tesla.com/en_CA/{$this->model}/order/{$this->vin}";
         }
 
         $this->syncOriginal();
@@ -79,16 +77,16 @@ class Car implements \JsonSerializable
 			$this->dbData = $obj->toArray();
 
 			if ($obj->price != $this->price) {
-				$this->price_history[] = array_pop($obj->price_history);
-				$this->price           = $obj->price;
+				$this->price_history   = array_merge($obj->price_history, $this->price_history);
 				$this->priceChanged    = true;
+				$this->save(true);
 			}
     	}
     }
 
     public function isPriceChanged() : bool
     {
-    	return $this->price_history;
+    	return $this->priceChanged;
     }
 
     public function isInDb() : bool
@@ -167,9 +165,12 @@ class Car implements \JsonSerializable
         
     }
 
-    public function save() : Self
+    public function save(?bool $nosync) : Self
     {
-    	$this->sync();
+    	if (!$nosync)
+    	{
+    		$this->sync();
+    	}
 
     	if ($this->_id && $this->isDirty()) {
 			$this->last_update = \Carbon\Carbon::now();
@@ -225,30 +226,37 @@ class Car implements \JsonSerializable
     {
     	$string = '';
 
-    	foreach($this->attributes as $key => $val) {
-    		if ("price_history" == $key) {
-    			$string .= "\t{$key}\n";
+    	foreach($this->attributes as $key => $val) 
+    	{
+    		switch ($key) {
+    			case 'price_history':
+    				$string .= "\t{$key}\n";
     			
-    			foreach ($val as $ph) 
-    			{
-    				$p = new Money($ph['price'], new Currency('CAD'), true);
-    				$string .= "\t\t{$p} on {$ph['date']}\n";
-    			}
-    		}
-    		elseif('price' == $key) 
-    		{
-    			$p = new Money($val, new Currency('CAD'), true);
-    			$string .= "\t{$key}:\t\t{$p}\n";
-    		} 
-    		elseif('_id' == $key) 
-    		{
+	    			foreach ($val as $ph) 
+	    			{
+	    				$p = new Money($ph['price'], new Currency('CAD'), true);
+	    				$string .= "\t\t{$p} on {$ph['date']}\n";
+	    			}
+    				break;
+    			case 'price':
+    				$p = new Money($val, new Currency('CAD'), true);
+    				$string .= "\t{$key}:\t\t{$p}\n";
 
-    		} 
-    		else 
-    		{
-
-    			$tabs = (7 < strlen($key)) ? "\t" : "\t\t";
-    			$string .= "\t{$key}:{$tabs}{$val}\n";
+    				break;
+    			case 'odometer':
+	    			$tabs = (7 < strlen($key)) ? "\t" : "\t\t";
+	    			$string .= "\t{$key}:{$tabs}{$val} km\n";
+	    			break;
+    			case 'trim':
+    			case 'color':
+    			case 'year':
+    			case 'type':
+    			case 'status':
+    			case 'sold_on':
+    			case 'url':
+    				$tabs = (7 < strlen($key)) ? "\t" : "\t\t";
+    				$string .= "\t{$key}:{$tabs}{$val}\n";
+    				break;
     		}
     	}
 
