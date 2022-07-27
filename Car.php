@@ -165,7 +165,7 @@ class Car implements \JsonSerializable
         
     }
 
-    public function save(?bool $nosync) : Self
+    public function save(?bool $nosync = null) : Self
     {
     	if (!$nosync)
     	{
