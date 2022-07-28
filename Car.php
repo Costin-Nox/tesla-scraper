@@ -1,6 +1,6 @@
 <?php
 /**
- * Car Object
+ * Car Object -- Repository-ish
  * 
  * @author Costin Ghiocel <costinghiocel@gmail.com>
  */
@@ -31,6 +31,7 @@ class Car implements \JsonSerializable
 
     public function __construct($data = null)
     {
+        //bind singleton db instance to obj (turns this into a repository-ish)
         $this->db = Db::get();
 
         if ($data && is_array($data)) 
@@ -70,6 +71,11 @@ class Car implements \JsonSerializable
         return $this->getAttribute($key);
     }
 
+    /**
+     * Things change, we're not using a relational DB, need to do this.
+     * 
+     * @return [type] [description]
+     */
     public function sync()
     {
     	if (!empty($this->_id) || $this->didSync) { return; }
@@ -77,29 +83,21 @@ class Car implements \JsonSerializable
 		$this->didSync = true;
 		$obj           = Self::fetch($this->vin);
 
+        //did we have a hit in the db?
     	if (!empty($obj->_id)) {
 			$this->_id    = $obj->_id;
 			$this->dbData = $obj->toArray();
 
+            //did the price change? we only care if it went down, their api is cached and it will fluctuate randomly for a while..
 			if ($obj->price > $this->price) 
             {
-                $duplicatePrice = false;
-
-                foreach ($obj->price_history as $h) {
-                    if ($h['price'] == $this->price) {
-                        $duplicatePrice = true;
-                        break;
-                    }
-                }
-
-                if (!$duplicatePrice) {
-                    $this->price_history = array_merge($obj->price_history, $this->price_history);
-                    $this->priceChanged  = true;
-                    $this->save(true);
-                } else {
-                    $this->price_history = $obj->price_history;
-                }				
-			} else {
+                $this->price_history = array_merge($obj->price_history, $this->price_history);
+                $this->priceChanged  = true;
+                $this->save(true);		
+			} 
+            //make sure we dont override the db history..
+            else 
+            {
                 $this->price_history = $obj->price_history;
             }
     	}
@@ -244,6 +242,11 @@ class Car implements \JsonSerializable
         return $this->attributes[$this->primaryKey];
     }
 
+    /**
+     * Pretty output when cast to string.
+     *
+     * @return string [description]
+     */
     public function __toString()
     {
     	$string = '';

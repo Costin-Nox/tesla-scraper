@@ -35,6 +35,12 @@ class Db
         return self::$instance;
     }
 
+    /**
+     * Pass the shizz forward
+     * @param  [type] $name [description]
+     * @param  [type] $args [description]
+     * @return [type]       [description]
+     */
     public function __call($name, $args) 
     {
         if(method_exists($this, $name)) {
