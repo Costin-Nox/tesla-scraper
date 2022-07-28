@@ -18,14 +18,14 @@ class Car implements \JsonSerializable
     const CREATED_AT = 'created_at';
     const UPDATED_AT = 'last_update';
 
-	protected $guarded      = [];
-	protected $visible      = [];
-	protected $hidden       = [];
-	protected $dbData       = [];
-	protected $primaryKey   = 'vin';
-	protected $timestamps   = true;
-	protected $didSync      = false;
-	protected $priceChanged = false;
+    protected $guarded      = [];
+    protected $visible      = [];
+    protected $hidden       = [];
+    protected $dbData       = [];
+    protected $primaryKey   = 'vin';
+    protected $timestamps   = true;
+    protected $didSync      = false;
+    protected $priceChanged = false;
 
     protected $db;
 
@@ -36,12 +36,12 @@ class Car implements \JsonSerializable
 
         if ($data && is_array($data)) 
         {
-        	foreach ($data as $key => $value) {
-    			$this->$key = $value;
-    		}
+            foreach ($data as $key => $value) {
+                $this->$key = $value;
+            }
 
-			$this->dbData  = $data;
-			$this->didSync = true;
+            $this->dbData  = $data;
+            $this->didSync = true;
         } 
         elseif($data) 
         {
@@ -49,7 +49,7 @@ class Car implements \JsonSerializable
         }
 
         if ($this->vin) {
-        	$this->url = "https://www.tesla.com/en_CA/{$this->model}/order/{$this->vin}";
+            $this->url = "https://www.tesla.com/en_CA/{$this->model}/order/{$this->vin}";
         }
 
         if ($this->optionCodes) {
@@ -78,59 +78,59 @@ class Car implements \JsonSerializable
      */
     public function sync()
     {
-    	if (!empty($this->_id) || $this->didSync) { return; }
+        if (!empty($this->_id) || $this->didSync) { return; }
 
-		$this->didSync = true;
-		$obj           = Self::fetch($this->vin);
+        $this->didSync = true;
+        $obj           = Self::fetch($this->vin);
 
         //did we have a hit in the db?
-    	if (!empty($obj->_id)) {
-			$this->_id    = $obj->_id;
-			$this->dbData = $obj->toArray();
+        if (!empty($obj->_id)) {
+            $this->_id    = $obj->_id;
+            $this->dbData = $obj->toArray();
 
             //did the price change? we only care if it went down, their api is cached and it will fluctuate randomly for a while..
-			if ($obj->price > $this->price) 
+            if ($obj->price > $this->price) 
             {
                 $this->price_history = array_merge($obj->price_history, $this->price_history);
                 $this->priceChanged  = true;
-                $this->save(true);		
-			} 
+                $this->save(true);      
+            } 
             //make sure we dont override the db history..
             else 
             {
                 $this->price_history = $obj->price_history;
             }
-    	}
+        }
     }
 
     public function isPriceChanged() : bool
     {
-    	return $this->priceChanged;
+        return $this->priceChanged;
     }
 
     public function isInDb() : bool
     {
-    	$this->sync();
+        $this->sync();
 
-    	return !empty($this->_id);
+        return !empty($this->_id);
     }
 
 
     public function fill(\stdClass $description) 
     {
-		$this->vin           = $description->VIN;
-		$this->price         = $description->InventoryPrice;
-		$this->odometer      = $description->Odometer;
-		$this->model         = $description->Model;
-		$this->trim          = $description->TrimName;
-		$this->color         = array_pop($description->PAINT);
-		$this->year          = $description->Year;
-		$this->built         = $description->ActualGAInDate;
-		$this->type          = $description->TitleStatus;
-		$this->status        = 'active';
+        $this->vin           = $description->VIN;
+        $this->price         = $description->InventoryPrice;
+        $this->odometer      = $description->Odometer;
+        $this->model         = $description->Model;
+        $this->trim          = $description->TrimName;
+        $this->color         = array_pop($description->PAINT);
+        $this->year          = $description->Year;
+        $this->built         = $description->ActualGAInDate;
+        $this->type          = $description->TitleStatus;
+        $this->status        = 'active';
         $this->optionCodes   = $description->OptionCodeList;
-		$this->sold_on       = null;
-		$this->price_history = [['price' => $description->InventoryPrice, 'date' => \Carbon\Carbon::now('America/Vancouver')]];
+        $this->sold_on       = null;
+        $this->price_history = [['price' => $description->InventoryPrice, 'date' => \Carbon\Carbon::now('America/Vancouver')]];
     }
 
     public function __isset($key)
@@ -187,54 +187,54 @@ class Car implements \JsonSerializable
 
     public function save(?bool $nosync = null) : Self
     {
-    	if (!$nosync)
-    	{
-    		$this->sync();
-    	}
+        if (!$nosync)
+        {
+            $this->sync();
+        }
 
-    	if ($this->_id && $this->isDirty()) {
-			$this->last_update = \Carbon\Carbon::now('America/Vancouver');
-			$result            = $this->db->update($this->toArray());
-			$this->syncOriginal();
-    	} else {
-    		//create
-    		//dd($this);
-			$this->last_update = \Carbon\Carbon::now('America/Vancouver');
-			$this->created_at  = \Carbon\Carbon::now('America/Vancouver');
-			$result            = $this->db->insert($this->toArray());
-			$this->_id         = $result['_id'];
-			$this->syncOriginal();
-    	}
+        if ($this->_id && $this->isDirty()) {
+            $this->last_update = \Carbon\Carbon::now('America/Vancouver');
+            $result            = $this->db->update($this->toArray());
+            $this->syncOriginal();
+        } else {
+            //create
+            //dd($this);
+            $this->last_update = \Carbon\Carbon::now('America/Vancouver');
+            $this->created_at  = \Carbon\Carbon::now('America/Vancouver');
+            $result            = $this->db->insert($this->toArray());
+            $this->_id         = $result['_id'];
+            $this->syncOriginal();
+        }
 
-    	return $this;
+        return $this;
     }
 
     public static function fetch(string $vin) : Self
     {
-		$fromDb = Db::get()->findBy(['vin', '=', $vin]);
-    	
-    	if (count($fromDb)) {
-			$data = array_pop($fromDb);
-			$car  = new Self($data);
+        $fromDb = Db::get()->findBy(['vin', '=', $vin]);
+        
+        if (count($fromDb)) {
+            $data = array_pop($fromDb);
+            $car  = new Self($data);
 
-			return $car;
-    	}
+            return $car;
+        }
 
-    	return new Self();
+        return new Self();
     }
 
     public static function all() 
     {
-    	$objects = Db::get()->findAll();
-    	$result = [];
+        $objects = Db::get()->findAll();
+        $result = [];
 
-    	foreach($objects as $car) {
-    		$result[] = new Self($car);
-    	}
+        foreach($objects as $car) {
+            $result[] = new Self($car);
+        }
 
-    	$result = collect($result);
+        $result = collect($result);
 
-    	return $result;
+        return $result;
     }
 
     public function getKey() 
@@ -249,44 +249,44 @@ class Car implements \JsonSerializable
      */
     public function __toString()
     {
-    	$string = '';
+        $string = '';
 
-    	foreach($this->attributes as $key => $val) 
-    	{
+        foreach($this->attributes as $key => $val) 
+        {
             $tabs = (7 < strlen($key)) ? "\t" : "\t\t";
 
-    		switch ($key) {
-    			case 'price_history':
-    				$string .= "\t{$key}\n";
-    			
-	    			foreach ($val as $ph) 
-	    			{
+            switch ($key) {
+                case 'price_history':
+                    $string .= "\t{$key}\n";
+                
+                    foreach ($val as $ph) 
+                    {
                         $p      = new Money($ph['price'], new Currency('CAD'), true);
                         $date   = new \Carbon\Carbon($ph['date']);
                         $date   = $date->toFormattedDateString();
                         $string .= "\t\t{$p} on {$date}\n";
-	    			}
-    				break;
-    			case 'price':
-    				$p = new Money($val, new Currency('CAD'), true);
-    				$string .= "\t{$key}:\t\t{$p}\n";
+                    }
+                    break;
+                case 'price':
+                    $p = new Money($val, new Currency('CAD'), true);
+                    $string .= "\t{$key}:\t\t{$p}\n";
 
-    				break;
-    			case 'odometer':
-	    			$string .= "\t{$key}:{$tabs}{$val} km\n";
-	    			break;
-    			case 'trim':
-    			case 'color':
-    			case 'year':
-    			case 'type':
-    			case 'status':
-    			case 'sold_on':
-    			case 'url':
-    				$string .= "\t{$key}:{$tabs}{$val}\n";
-    				break;
-    		}
-    	}
+                    break;
+                case 'odometer':
+                    $string .= "\t{$key}:{$tabs}{$val} km\n";
+                    break;
+                case 'trim':
+                case 'color':
+                case 'year':
+                case 'type':
+                case 'status':
+                case 'sold_on':
+                case 'url':
+                    $string .= "\t{$key}:{$tabs}{$val}\n";
+                    break;
+            }
+        }
 
-    	return $string."\t__________________________________________________________\n\n";
+        return $string."\t__________________________________________________________\n\n";
     }
 }

@@ -28,8 +28,8 @@ function _log(string $msg, ?bool $isError = null) {
  * @return [type]       [description]
  */
 function dd($data) {
-	dump($data);
-	die;
+    dump($data);
+    die;
 }
 
 /**
@@ -57,27 +57,27 @@ $now    = \Carbon\Carbon::now('America/Vancouver');
 $html = "<br><br><h2>Updates " . $now->toDayDateTimeString() . "</h2><br><br>";
 foreach ($changes as $type => $cars) 
 {
-	if (count($cars)) {
-		$hasChanges = true;
-		$html .= "<br><h3>{$type}</h3><br>";
-		$html .= "<table>";
-		foreach($cars as $c) {
-			$html .= "<tr><td><img src='{$c->imageUrl}'></img><td><td>";
-			$html .= "<pre>";
-			$html .= $c;
-			$html .= "</pre></td></tr>";
-		}
-		$html .= "</table><br>";
-	}
-	
+    if (count($cars)) {
+        $hasChanges = true;
+        $html .= "<br><h3>{$type}</h3><br>";
+        $html .= "<table>";
+        foreach($cars as $c) {
+            $html .= "<tr><td><img src='{$c->imageUrl}'></img><td><td>";
+            $html .= "<pre>";
+            $html .= $c;
+            $html .= "</pre></td></tr>";
+        }
+        $html .= "</table><br>";
+    }
+    
 }
 $html .= "<br><br><h2>Cars Available</h2><br><br>";
 $html .= "<table>";
 foreach($carsAvailable as $c) {
-	$html .= "<tr><td><img src='{$c->imageUrl}'></img><td><td>";
-	$html .= "<pre>";
-	$html .= $c;
-	$html .= "</pre></td></tr>";
+    $html .= "<tr><td><img src='{$c->imageUrl}'></img><td><td>";
+    $html .= "<pre>";
+    $html .= $c;
+    $html .= "</pre></td></tr>";
 }
 $html .= "</table><br>";
 
@@ -86,28 +86,28 @@ $html .= "</table><br>";
  */
 if ($hasChanges)
 {
-	$sendTo = explode(',',getenv('EMAIL_TO'));
-	$email  = new \SendGrid\Mail\Mail();
+    $sendTo = explode(',',getenv('EMAIL_TO'));
+    $email  = new \SendGrid\Mail\Mail();
 
-	$email->setFrom(getenv('EMAIL_FROM'), "Tesla Scraper");
-	$email->setSubject("Tesla Store Updates");
-	foreach($sendTo as $sendAddr) {
-		$email->addTo($sendAddr, "User");
-	}
-	$email->addContent(
-	    "text/html", $html
-	);
-	$sendgrid = new \SendGrid(getenv('SENDGRID_API_KEY'));
-	try {
-	    $response = $sendgrid->send($email);
-	    print $response->statusCode() . "\n";
-	    print_r($response->headers());
-	    print $response->body() . "\n";
-	} catch (Exception $e) {
-	    echo 'Caught exception: '. $e->getMessage() ."\n";
-	}
+    $email->setFrom(getenv('EMAIL_FROM'), "Tesla Scraper");
+    $email->setSubject("Tesla Store Updates");
+    foreach($sendTo as $sendAddr) {
+        $email->addTo($sendAddr, "User");
+    }
+    $email->addContent(
+        "text/html", $html
+    );
+    $sendgrid = new \SendGrid(getenv('SENDGRID_API_KEY'));
+    try {
+        $response = $sendgrid->send($email);
+        print $response->statusCode() . "\n";
+        print_r($response->headers());
+        print $response->body() . "\n";
+    } catch (Exception $e) {
+        echo 'Caught exception: '. $e->getMessage() ."\n";
+    }
 } else {
-	_log("No changes!");
+    _log("No changes!");
 }
 
 ?>

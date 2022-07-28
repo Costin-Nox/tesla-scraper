@@ -8,17 +8,17 @@
 
 class Db
 {
-	private $db;
+    private $db;
 
     protected static $instance = null;
 
-	public function __construct()
-	{
-		$databaseDirectory = __DIR__ . "/teslaDb";
-		$this->db          = new \SleekDB\Store("tesla", $databaseDirectory);
-		//singleton class
+    public function __construct()
+    {
+        $databaseDirectory = __DIR__ . "/teslaDb";
+        $this->db          = new \SleekDB\Store("tesla", $databaseDirectory);
+        //singleton class
         self::$instance = $this;
-	}
+    }
 
 
     /**
@@ -49,5 +49,5 @@ class Db
             return $this->db->$name(...$args);
         }
     }
-	
+    
 }
