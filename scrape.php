@@ -53,28 +53,33 @@ $hasChanges      = false;
  * Gen HTML
  * @var string
  */
-
-$html = "<br><br><h2>Updates</h2><br><br>";
+$now    = \Carbon\Carbon::now('America/Vancouver');
+$html = "<br><br><h2>Updates " . $now->toDayDateTimeString() . "</h2><br><br>";
 foreach ($changes as $type => $cars) 
 {
 	if (count($cars)) {
 		$hasChanges = true;
 		$html .= "<br><h3>{$type}</h3><br>";
-		$html .= "<pre>";
+		$html .= "<table>";
 		foreach($cars as $c) {
+			$html .= "<tr><td><img src='{$c->imageUrl}'></img><td><td>";
+			$html .= "<pre>";
 			$html .= $c;
+			$html .= "</pre></td></tr>";
 		}
-		$html .= "</pre><br>";
+		$html .= "</table><br>";
 	}
 	
 }
 $html .= "<br><br><h2>Cars Available</h2><br><br>";
-$html .= "<pre>";
+$html .= "<table>";
 foreach($carsAvailable as $c) {
+	$html .= "<tr><td><img src='{$c->imageUrl}'></img><td><td>";
+	$html .= "<pre>";
 	$html .= $c;
+	$html .= "</pre></td></tr>";
 }
-
-$html .= "</pre><br>";
+$html .= "</table><br>";
 
 /**
  * Send E-mail
@@ -82,12 +87,12 @@ $html .= "</pre><br>";
 if ($hasChanges)
 {
 	$sendTo = explode(',',getenv('EMAIL_TO'));
+	$email  = new \SendGrid\Mail\Mail();
 
-	$email = new \SendGrid\Mail\Mail();
 	$email->setFrom(getenv('EMAIL_FROM'), "Tesla Scraper");
 	$email->setSubject("Tesla Store Updates");
 	foreach($sendTo as $sendAddr) {
-		$email->addTo($sendAddr, "Some Dude");
+		$email->addTo($sendAddr, "User");
 	}
 	$email->addContent(
 	    "text/html", $html

@@ -51,6 +51,7 @@ Class TeslaScraper
 
 			foreach ($details->results as $car => $description) 
 			{
+				//if ($description->TitleStatus == 'USED') {dd($description);}
 				$result[] = new Car($description);
 			}
 
@@ -96,7 +97,7 @@ Class TeslaScraper
 		{
 			if ($car->status != 'sold') 
 			{
-				$car->sold_on    = \Carbon\Carbon::now();
+				$car->sold_on    = \Carbon\Carbon::now('America/Vancouver');
 				$car->status     = 'sold';
 				$car->save();
 

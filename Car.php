@@ -51,6 +51,11 @@ class Car implements \JsonSerializable
         	$this->url = "https://www.tesla.com/en_CA/{$this->model}/order/{$this->vin}";
         }
 
+        if ($this->optionCodes) {
+            $view = ($this->type == 'USED') ? 'STUD_3QTR_V2' : 'FRONT34';
+            $this->imageUrl = 'https://static-assets.tesla.com/configurator/compositor?&bkba_opt=2&view='.$view.'&size=450&model='.$this->model.'&options='.$this->optionCodes.'&crop=1400,850,300,130&scalemode=centered';
+        }
+
         $this->syncOriginal();
     }
 
@@ -76,11 +81,27 @@ class Car implements \JsonSerializable
 			$this->_id    = $obj->_id;
 			$this->dbData = $obj->toArray();
 
-			if ($obj->price != $this->price) {
-				$this->price_history   = array_merge($obj->price_history, $this->price_history);
-				$this->priceChanged    = true;
-				$this->save(true);
-			}
+			if ($obj->price > $this->price) 
+            {
+                $duplicatePrice = false;
+
+                foreach ($obj->price_history as $h) {
+                    if ($h['price'] == $this->price) {
+                        $duplicatePrice = true;
+                        break;
+                    }
+                }
+
+                if (!$duplicatePrice) {
+                    $this->price_history = array_merge($obj->price_history, $this->price_history);
+                    $this->priceChanged  = true;
+                    $this->save(true);
+                } else {
+                    $this->price_history = $obj->price_history;
+                }				
+			} else {
+                $this->price_history = $obj->price_history;
+            }
     	}
     }
 
@@ -109,8 +130,9 @@ class Car implements \JsonSerializable
 		$this->built         = $description->ActualGAInDate;
 		$this->type          = $description->TitleStatus;
 		$this->status        = 'active';
+        $this->optionCodes   = $description->OptionCodeList;
 		$this->sold_on       = null;
-		$this->price_history = [['price' => $description->InventoryPrice, 'date' => \Carbon\Carbon::now()]];
+		$this->price_history = [['price' => $description->InventoryPrice, 'date' => \Carbon\Carbon::now('America/Vancouver')]];
     }
 
     public function __isset($key)
@@ -173,14 +195,14 @@ class Car implements \JsonSerializable
     	}
 
     	if ($this->_id && $this->isDirty()) {
-			$this->last_update = \Carbon\Carbon::now();
+			$this->last_update = \Carbon\Carbon::now('America/Vancouver');
 			$result            = $this->db->update($this->toArray());
 			$this->syncOriginal();
     	} else {
     		//create
     		//dd($this);
-			$this->last_update = \Carbon\Carbon::now();
-			$this->created_at  = \Carbon\Carbon::now();
+			$this->last_update = \Carbon\Carbon::now('America/Vancouver');
+			$this->created_at  = \Carbon\Carbon::now('America/Vancouver');
 			$result            = $this->db->insert($this->toArray());
 			$this->_id         = $result['_id'];
 			$this->syncOriginal();
@@ -228,14 +250,18 @@ class Car implements \JsonSerializable
 
     	foreach($this->attributes as $key => $val) 
     	{
+            $tabs = (7 < strlen($key)) ? "\t" : "\t\t";
+
     		switch ($key) {
     			case 'price_history':
     				$string .= "\t{$key}\n";
     			
 	    			foreach ($val as $ph) 
 	    			{
-	    				$p = new Money($ph['price'], new Currency('CAD'), true);
-	    				$string .= "\t\t{$p} on {$ph['date']}\n";
+                        $p      = new Money($ph['price'], new Currency('CAD'), true);
+                        $date   = new \Carbon\Carbon($ph['date']);
+                        $date   = $date->toFormattedDateString();
+                        $string .= "\t\t{$p} on {$date}\n";
 	    			}
     				break;
     			case 'price':
@@ -244,7 +270,6 @@ class Car implements \JsonSerializable
 
     				break;
     			case 'odometer':
-	    			$tabs = (7 < strlen($key)) ? "\t" : "\t\t";
 	    			$string .= "\t{$key}:{$tabs}{$val} km\n";
 	    			break;
     			case 'trim':
@@ -254,12 +279,11 @@ class Car implements \JsonSerializable
     			case 'status':
     			case 'sold_on':
     			case 'url':
-    				$tabs = (7 < strlen($key)) ? "\t" : "\t\t";
     				$string .= "\t{$key}:{$tabs}{$val}\n";
     				break;
     		}
     	}
 
-    	return $string."\t--------------------------\n\n";
+    	return $string."\t__________________________________________________________\n\n";
     }
 }
