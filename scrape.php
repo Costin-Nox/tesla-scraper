@@ -56,10 +56,14 @@ $hasChanges         = false;
  */
 $now    = \Carbon\Carbon::now('America/Vancouver');
 $html = "<br><br><h2>Updates " . $now->toDayDateTimeString() . "</h2><br><br>";
+
+if (count($changes['sold']) || count($changes['price_change']) || count($changes['new'])) {
+    $hasChanges = true;
+}
+
 foreach ($changes as $type => $cars) 
 {
     if (count($cars)) {
-        $hasChanges = true;
         $html .= "<br><h3>{$type}</h3><br>";
         $html .= "<table>";
         foreach($cars as $c) {
