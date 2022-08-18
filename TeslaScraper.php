@@ -14,6 +14,7 @@ use Tightenco\Collect\Support\Collection;
 Class TeslaScraper
 {
     protected $client;
+    protected $dbCars;
 
     public function __construct() {
         $this->client  = new Client([
@@ -24,10 +25,19 @@ Class TeslaScraper
         ]);
     }
 
+    public function getDbCars() 
+    {
+        if (!empty($this->dbCars)) { return $this->dbCars; }
+
+        $this->dbCars = Car::all();
+
+        return $this->dbCars;
+    }
+
     public function scrape() : array
     {
         $searches = [
-            'newModelS'  => getenv('NEW_MS'),
+            //'newModelS'  => getenv('NEW_MS'),
             'usedModelS' => getenv('USED_MS'),
             'newModel3'  => getenv('NEW_M3'),
             'usedModel3' => getenv('USED_M3'),
@@ -82,7 +92,7 @@ Class TeslaScraper
 
     public function getSold(array $data) : array
     {
-        $fromDb   = Car::all();
+        $fromDb   = $this->getDbCars();
         $soldList = [];
         $vins     = [];
 
@@ -106,6 +116,14 @@ Class TeslaScraper
         }
 
         return $soldList;       
+    }
+
+    public function getHistory() : array
+    {
+        $fromDb   = $this->getDbCars();
+        $history = $fromDb->where('status', 'sold')->where('type', 'USED');
+
+        return $history->toArray();
     }
 
 }

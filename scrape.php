@@ -42,11 +42,12 @@ $dotenv->load();
 /**
  * Run
  */
-$tesla           = new TeslaScraper();
-$carsAvailable   = $tesla->scrape();
-$changes         = $tesla->proccessData($carsAvailable);
-$changes['sold'] = $tesla->getSold($carsAvailable);
-$hasChanges      = false;
+$tesla              = new TeslaScraper();
+$carsAvailable      = $tesla->scrape();
+$changes            = $tesla->proccessData($carsAvailable);
+$changes['sold']    = $tesla->getSold($carsAvailable);
+$changes['history'] = $tesla->getHistory();
+$hasChanges         = false;
 
 
 /**
